@@ -6,11 +6,11 @@ export default function VendorRegister() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // State updated to match your exact backend keys
+  // State matches your models.py VendorCreate exact keys
   const [formData, setFormData] = useState({
     user_id: '',
     business_name: '',
-    service_category: 'Catering', // Updated to match "service_category"
+    category: 'Catering', 
     description: '',
     price_range: '',
   });
@@ -20,44 +20,30 @@ export default function VendorRegister() {
     setLoading(true);
     
     try {
-      // 1. Create the native FormData object instead of JSON
-      const payload = new FormData();
-      
-      // 2. Append fields exactly as shown in your reference
-      payload.append("user_id", formData.user_id);
-      payload.append("business_name", formData.business_name);
-      payload.append("service_category", formData.service_category);
-      payload.append("description", formData.description);
-      payload.append("price_range", formData.price_range);
+      // Send as standard JSON because vendors.py uses a Pydantic BaseModel directly
+      const payload = {
+        user_id: parseInt(formData.user_id),
+        business_name: formData.business_name,
+        category: formData.category,
+        description: formData.description,
+        price_range: formData.price_range
+      };
 
-      // 3. Send the FormData payload to the backend
-      const response = await api.post('/vendors/register', payload);
+      await api.post('/vendors/register', payload);
 
-      console.log("Success:", response.data);
       alert("Business Registered Successfully!");
       navigate('/vendors'); 
       
     } catch (err) {
       console.error("Submission Error:", err);
-      
-      let errorMessage = "Failed to register vendor business.";
       const detail = err.response?.data?.detail;
+      let errorMessage = "Failed to register vendor business.";
       
-      if (detail) {
-        if (Array.isArray(detail)) {
-          errorMessage = detail.map(errItem => {
-            const field = errItem.loc ? errItem.loc[errItem.loc.length - 1] : 'Field';
-            return `${field}: ${errItem.msg}`;
-          }).join('\n');
-        } else if (typeof detail === 'string') {
-          errorMessage = detail;
-        } else {
-          errorMessage = JSON.stringify(detail);
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
+      if (Array.isArray(detail)) {
+        errorMessage = detail.map(e => `${e.loc[e.loc.length - 1]}: ${e.msg}`).join('\n');
+      } else if (typeof detail === 'string') {
+        errorMessage = detail;
       }
-
       alert(`Registration Error:\n${errorMessage}`);
     } finally {
       setLoading(false);
@@ -76,7 +62,7 @@ export default function VendorRegister() {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">User ID</label>
             <input 
               required type="number"
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 transition-all placeholder:text-gray-700"
+              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500"
               placeholder="e.g. 1"
               value={formData.user_id}
               onChange={(e) => setFormData({...formData, user_id: e.target.value})}
@@ -86,8 +72,8 @@ export default function VendorRegister() {
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Business Name</label>
             <input 
-              required
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 transition-all placeholder:text-gray-700"
+              required type="text"
+              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500"
               placeholder="e.g. Elite Sound Systems"
               value={formData.business_name}
               onChange={(e) => setFormData({...formData, business_name: e.target.value})}
@@ -97,9 +83,10 @@ export default function VendorRegister() {
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Service Category</label>
             <select 
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none cursor-pointer appearance-none"
-              value={formData.service_category}
-              onChange={(e) => setFormData({...formData, service_category: e.target.value})}
+              required
+              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 cursor-pointer"
+              value={formData.category}
+              onChange={(e) => setFormData({...formData, category: e.target.value})}
             >
               <option value="Catering">Catering</option>
               <option value="Sound">Sound Systems</option>
@@ -112,7 +99,7 @@ export default function VendorRegister() {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Description</label>
             <textarea 
               required rows="3"
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 transition-all placeholder:text-gray-700 resize-none"
+              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 resize-none"
               placeholder="Tell us about your services..."
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -123,7 +110,7 @@ export default function VendorRegister() {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Price Range</label>
             <select 
               required
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none cursor-pointer appearance-none"
+              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 cursor-pointer"
               value={formData.price_range}
               onChange={(e) => setFormData({...formData, price_range: e.target.value})}
             >
@@ -137,7 +124,7 @@ export default function VendorRegister() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-brand-500 hover:bg-brand-600 py-4 rounded-xl text-white font-bold text-lg transition-all active:scale-95 disabled:opacity-50 shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+            className="w-full bg-brand-500 hover:bg-brand-600 py-4 rounded-xl text-white font-bold text-lg disabled:opacity-50"
           >
             {loading ? "Registering..." : "Register Business"}
           </button>
