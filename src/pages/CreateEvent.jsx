@@ -10,6 +10,8 @@ export default function CreateEvent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Package the data for FastAPI
     const data = new FormData();
     data.append('name', formData.name);
     data.append('description', formData.description);
@@ -17,10 +19,20 @@ export default function CreateEvent() {
     if (formData.image) data.append('image', formData.image);
 
     try {
-      await api.post('/events/', data, { headers: { 'Content-Type': 'multipart/form-data' }});
+      await api.post('/events/', data, { 
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      // If successful, redirect to the explore/events page
       navigate('/events');
     } catch (err) {
-      alert('Failed to create event');
+      // Log the full error to the console for debugging
+      console.error("Event creation error:", err);
+      
+      // Extract the specific error message from FastAPI, or fallback to a standard message
+      const errorMessage = err.response?.data?.detail || err.message || "Failed to create event.";
+      
+      // Alert the actual reason it failed
+      alert(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -43,6 +55,7 @@ export default function CreateEvent() {
               placeholder="e.g. Neon Nights Festival"
               onChange={(e) => setFormData({...formData, name: e.target.value})} />
           </div>
+          
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</label>
             <textarea required rows="4" 
@@ -50,6 +63,7 @@ export default function CreateEvent() {
               placeholder="Tell the attendees what makes this event special..."
               onChange={(e) => setFormData({...formData, description: e.target.value})} />
           </div>
+          
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ticket Price ($)</label>
             <input type="number" required min="0" 
@@ -57,6 +71,7 @@ export default function CreateEvent() {
               placeholder="0.00"
               onChange={(e) => setFormData({...formData, price: e.target.value})} />
           </div>
+          
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Event Poster</label>
             <div className="block w-full bg-[#0a0a0a] border border-white/10 border-dashed text-gray-400 px-5 py-8 rounded-xl text-center hover:border-brand-500/50 transition-colors">
@@ -65,6 +80,7 @@ export default function CreateEvent() {
                 onChange={(e) => setFormData({...formData, image: e.target.files[0]})} />
             </div>
           </div>
+          
           <button type="submit" disabled={loading} 
             className="w-full py-4 px-4 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition-all shadow-[0_0_15px_var(--color-brand-glow)] hover:shadow-[0_0_25px_var(--color-brand-glow)] disabled:opacity-50 mt-4">
             {loading ? 'Publishing...' : 'Publish Event'}

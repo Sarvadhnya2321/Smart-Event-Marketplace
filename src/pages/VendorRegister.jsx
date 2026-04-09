@@ -27,8 +27,32 @@ export default function VendorRegister() {
       navigate('/vendors'); // Move to the directory after success
       
     } catch (err) {
-      console.error("Submission Error:", err.response?.data);
-      alert(err.response?.data?.detail || "Failed to register vendor business.");
+      console.error("Submission Error:", err);
+      
+      // Safely handle FastAPI's error formats (especially 422 Validation Errors)
+      let errorMessage = "Failed to register vendor business.";
+      const detail = err.response?.data?.detail;
+      
+      if (detail) {
+        if (Array.isArray(detail)) {
+          // FastAPI returns an array of objects for missing/invalid fields
+          errorMessage = detail.map(errItem => {
+            // Extracts the field name and the error message
+            const field = errItem.loc ? errItem.loc[errItem.loc.length - 1] : 'Field';
+            return `${field}: ${errItem.msg}`;
+          }).join('\n');
+        } else if (typeof detail === 'string') {
+          // Standard string error from your custom Python logic
+          errorMessage = detail;
+        } else {
+          // Fallback just in case it's another type of object
+          errorMessage = JSON.stringify(detail);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      alert(`Registration Error:\n${errorMessage}`);
     } finally {
       setLoading(false);
     }
