@@ -1,67 +1,145 @@
-import { useContext, useState } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { useState, useContext } from 'react';
 import { api } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 
-export default function EventCard({ event }) {
+export default function EventCard({ event, refreshEvents }) {
   const { user } = useContext(AuthContext);
+
   const [booking, setBooking] = useState(false);
   const [message, setMessage] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const isOrganizer = user?.role === "organiser";
+  const isOwner = user && user.user_id === event.organiser_id;
+
+  const formattedDate = new Date(event.date).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short'
+  });
 
   const handleBook = async () => {
-    if (!user) return alert('Please login to book tickets.');
+    if (!user) return alert('Login required');
+
     setBooking(true);
     try {
-      await api.post(`/bookings/?user_id=${user.user_id}&event_id=${event.id}&tickets=1`);
-      setMessage('Tickets Booked!');
-    } catch (err) {
-      setMessage('Booking failed');
+      await api.post(
+        `/bookings/?user_id=${user.user_id}&event_id=${event.id}&tickets=1`
+      );
+      setMessage('Booked!');
+    } catch {
+      setMessage('Failed');
     } finally {
       setBooking(false);
     }
   };
 
+  const handlePublish = async () => {
+    try {
+      await api.post(`/events/${event.id}/publish`);
+      refreshEvents();
+    } catch {
+      alert("Publish failed");
+    }
+  };
+
+  // 🔥 DELETE FUNCTION
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm("Delete this event?");
+    if (!confirmDelete) return;
+
+    setDeleting(true);
+    try {
+      await api.delete(`/events/${event.id}`);
+      refreshEvents(event.id);
+    } catch {
+      alert("Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <div className="group relative bg-[#0a0a0a] rounded-3xl transition-all duration-500 overflow-hidden border border-white/5 hover:border-white/20 flex flex-col cursor-pointer shadow-lg hover:shadow-2xl">
-      {/* Image container */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-[#111]">
-        <img 
-          src={event.poster_url || 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&auto=format&fit=crop'} 
-          alt={event.name} 
-          className="object-cover w-full h-full group-hover:scale-105 group-hover:opacity-80 transition-all duration-700 ease-out opacity-90" 
+    <div className="group bg-[#0a0a0a] rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 transition-all">
+
+      {/* IMAGE */}
+      <div className="relative h-40">
+        <img
+          src={event.poster_url}
+          alt={event.title}
+          className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80"></div>
-        <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10">
-          Selling Fast
+
+        {/* CATEGORY */}
+        <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 text-[10px] rounded-full text-white">
+          {event.category}
         </div>
-      </div>
-      
-      {/* Content */}
-      <div className="p-6 flex-1 flex flex-col relative z-10 -mt-12">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-xl font-black text-white leading-tight line-clamp-1 drop-shadow-md">{event.name}</h3>
-          <span className="flex items-center gap-1 text-sm font-bold text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded-md border border-brand-500/20">
-            ★ 4.9
-          </span>
-        </div>
-        <p className="text-gray-400 text-sm mb-6 line-clamp-2 flex-1 mt-2">{event.description}</p>
-        
-        <div className="flex justify-between items-end mt-auto pt-4 border-t border-white/5">
-          <div>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</span>
-            <div className="text-2xl font-black text-white">${event.price}</div>
+
+        {/* DRAFT BADGE */}
+        {!event.is_published && isOrganizer && (
+          <div className="absolute top-2 right-2 bg-yellow-500/20 text-yellow-400 px-2 py-0.5 text-[10px] rounded-full">
+            Draft
           </div>
-          <button 
-            onClick={handleBook} 
-            disabled={booking || message}
-            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
-              message 
-                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                : 'bg-white text-black hover:bg-gray-200 disabled:opacity-50'
-            }`}
-          >
-            {booking ? 'Processing...' : message || 'Book Now'}
-          </button>
+        )}
+      </div>
+
+      {/* CONTENT */}
+      <div className="p-3 flex flex-col gap-1.5">
+
+        <h3 className="text-white font-semibold text-sm line-clamp-1">
+          {event.title}
+        </h3>
+
+        <p className="text-gray-400 text-xs">
+          📍 {event.location} • {formattedDate}
+        </p>
+
+        <p className="text-gray-500 text-xs">
+          Budget: ₹{event.budget}
+        </p>
+
+        {/* FOOTER */}
+        <div className="flex justify-between items-center mt-2">
+
+          <span className="text-white text-sm font-bold">
+            ₹{event.ticket_price}
+          </span>
+
+          <div className="flex gap-1">
+
+            {/* BOOK */}
+            {event.is_published && (
+              <button
+                onClick={handleBook}
+                className="bg-brand-500 px-2.5 py-1 rounded-md text-[11px] text-white"
+              >
+                {booking ? "..." : message || "Book"}
+              </button>
+            )}
+
+            {/* PUBLISH */}
+            {isOrganizer && isOwner && !event.is_published && (
+              <button
+                onClick={handlePublish}
+                className="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-md text-[11px]"
+              >
+                Publish
+              </button>
+            )}
+
+            {/* 🔥 DELETE */}
+            {isOrganizer && isOwner && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="bg-red-500/20 text-red-400 px-2.5 py-1 rounded-md text-[11px] hover:bg-red-500/30"
+              >
+                {deleting ? "..." : "Delete"}
+              </button>
+            )}
+
+          </div>
         </div>
+
       </div>
     </div>
   );

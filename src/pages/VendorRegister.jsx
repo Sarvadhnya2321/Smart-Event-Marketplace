@@ -5,134 +5,194 @@ import { api } from '../services/api';
 export default function VendorRegister() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
-  // State matches your models.py VendorCreate exact keys
+
+  const [openCategory, setOpenCategory] = useState(false);
+  const [openPrice, setOpenPrice] = useState(false);
+
   const [formData, setFormData] = useState({
     user_id: '',
     business_name: '',
-    category: 'Catering', 
+    category: 'Catering',
     description: '',
     price_range: '',
+    contact_info: '',
   });
+
+  const categories = [
+    "Catering",
+    "Sound Systems",
+    "Lighting & Decor",
+    "Venue Provider"
+  ];
+
+  const prices = [
+    { label: "$", value: "$" },
+    { label: "$$", value: "$$" },
+    { label: "$$$", value: "$$$" },
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    try {
-      // Send as standard JSON because vendors.py uses a Pydantic BaseModel directly
-      const payload = {
-        user_id: parseInt(formData.user_id),
-        business_name: formData.business_name,
-        category: formData.category,
-        description: formData.description,
-        price_range: formData.price_range
-      };
 
-      // Explicitly forcing the header so FastAPI reads the body as JSON
-      await api.post('/vendors/register', payload, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+    try {
+      await api.post('/vendors/register', {
+        ...formData,
+        user_id: parseInt(formData.user_id),
       });
 
       alert("Business Registered Successfully!");
-      navigate('/vendors'); 
-      
+      navigate('/vendors');
+
     } catch (err) {
-      console.error("Submission Error:", err);
-      const detail = err.response?.data?.detail;
-      let errorMessage = "Failed to register vendor business.";
-      
-      if (Array.isArray(detail)) {
-        errorMessage = detail.map(e => `${e.loc[e.loc.length - 1]}: ${e.msg}`).join('\n');
-      } else if (typeof detail === 'string') {
-        errorMessage = detail;
-      }
-      alert(`Registration Error:\n${errorMessage}`);
+      console.error(err);
+      alert("Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
+  const inputClass =
+    "w-full bg-[#0a0a0a] border border-white/10 text-white px-4 py-3 rounded-xl outline-none focus:border-brand-500 transition";
+
   return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-80px)] px-4 bg-black py-12">
-      <div className="max-w-md w-full bg-[#111] p-10 rounded-3xl border border-white/10 shadow-2xl">
-        <h2 className="text-4xl font-black text-white mb-2">Vendor Signup</h2>
-        <p className="text-gray-400 mb-8 text-sm">Register your professional services.</p>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">User ID</label>
-            <input 
-              required type="number"
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500"
-              placeholder="e.g. 1"
+    <div className="flex justify-center items-start min-h-screen bg-black px-6 py-10">
+      
+      {/* 🔥 WIDER + SHORTER CARD */}
+      <div className="w-full max-w-5xl bg-[#111] p-10 rounded-3xl border border-white/10 shadow-2xl">
+
+        {/* HEADER */}
+        <div className="mb-6">
+          <h2 className="text-3xl font-black text-white">
+            Vendor <span className="text-brand-500">Signup</span>
+          </h2>
+          <p className="text-gray-400 text-sm mt-1">
+            Register your business in EventSphere
+          </p>
+        </div>
+
+        {/* FORM */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* ROW 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            
+            <input
+              type="number"
+              placeholder="User ID"
+              className={inputClass}
               value={formData.user_id}
-              onChange={(e) => setFormData({...formData, user_id: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, user_id: e.target.value })
+              }
+              required
             />
+
+            {/* CATEGORY */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenCategory(!openCategory)}
+                className={inputClass + " text-left"}
+              >
+                {formData.category}
+              </button>
+
+              {openCategory && (
+                <div className="absolute w-full mt-2 bg-[#111] border border-white/10 rounded-xl z-10">
+                  {categories.map((item) => (
+                    <div
+                      key={item}
+                      onClick={() => {
+                        setFormData({ ...formData, category: item });
+                        setOpenCategory(false);
+                      }}
+                      className="p-2 hover:bg-brand-500/20 cursor-pointer"
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* PRICE */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenPrice(!openPrice)}
+                className={inputClass + " text-left"}
+              >
+                {formData.price_range || "Price"}
+              </button>
+
+              {openPrice && (
+                <div className="absolute w-full mt-2 bg-[#111] border border-white/10 rounded-xl z-10">
+                  {prices.map((item) => (
+                    <div
+                      key={item.value}
+                      onClick={() => {
+                        setFormData({ ...formData, price_range: item.value });
+                        setOpenPrice(false);
+                      }}
+                      className="p-2 hover:bg-brand-500/20 cursor-pointer"
+                    >
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Business Name</label>
-            <input 
-              required type="text"
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500"
-              placeholder="e.g. Elite Sound Systems"
+          {/* ROW 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <input
+              type="text"
+              placeholder="Business Name"
+              className={inputClass}
               value={formData.business_name}
-              onChange={(e) => setFormData({...formData, business_name: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, business_name: e.target.value })
+              }
+              required
+            />
+
+            <input
+              type="text"
+              placeholder="Contact Info"
+              className={inputClass}
+              value={formData.contact_info}
+              onChange={(e) =>
+                setFormData({ ...formData, contact_info: e.target.value })
+              }
+              required
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Service Category</label>
-            <select 
-              required
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 cursor-pointer"
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
+          {/* DESCRIPTION */}
+          <textarea
+            rows="2"
+            placeholder="Short description..."
+            className={`${inputClass} resize-none`}
+            value={formData.description}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
+            required
+          />
+
+          {/* BUTTON */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-brand-500 hover:bg-brand-600 px-8 py-3 rounded-xl text-white font-bold transition"
             >
-              <option value="Catering">Catering</option>
-              <option value="Sound">Sound Systems</option>
-              <option value="Lighting">Lighting & Decor</option>
-              <option value="Venue">Venue Provider</option>
-            </select>
+              {loading ? "Registering..." : "Register"}
+            </button>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Description</label>
-            <textarea 
-              required rows="3"
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 resize-none"
-              placeholder="Tell us about your services..."
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Price Range</label>
-            <select 
-              required
-              className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none focus:border-brand-500 cursor-pointer"
-              value={formData.price_range}
-              onChange={(e) => setFormData({...formData, price_range: e.target.value})}
-            >
-              <option value="" disabled>Select a range</option>
-              <option value="$">$ (Budget)</option>
-              <option value="$$">$$ (Moderate)</option>
-              <option value="$$$">$$$ (Premium)</option>
-            </select>
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-brand-500 hover:bg-brand-600 py-4 rounded-xl text-white font-bold text-lg disabled:opacity-50"
-          >
-            {loading ? "Registering..." : "Register Business"}
-          </button>
         </form>
       </div>
     </div>

@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
       const { data } = await api.post('/auth/login', { email, password });
       setUser(data);
       localStorage.setItem('user', JSON.stringify(data));
-      return { success: true };
+      return { success: true, role: data.role };
     } catch (err) {
       return { success: false, message: err.response?.data?.detail || 'Login failed' };
     }

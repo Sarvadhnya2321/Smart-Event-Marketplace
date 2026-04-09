@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -12,6 +13,8 @@ import VendorMatching from './pages/VendorMatching';
 import VendorRegister from './pages/VendorRegister';
 
 function App() {
+  const [role, setRole] = useState("user");
+
   return (
     <Router>
       <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-brand-500/30 selection:text-white">
@@ -19,11 +22,11 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Login setRole={setRole}/>} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/vendors" element={<Vendors />} />
+            <Route path="/events" element={<Events role={role} />} />
+            <Route path="/vendors" element={<Vendors role={role} />} />
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/vendor-register" element={<VendorRegister />} />

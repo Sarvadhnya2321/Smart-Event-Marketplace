@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
-export default function Login() {
+export default function Login({setRole}) {
   const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -12,7 +12,8 @@ export default function Login() {
     setLoading(true);
     setError('');
     const res = await login(formData.email, formData.password);
-    if (!res.success) setError(res.message);
+    if (!res.success || !res.role) setError(res.message);
+    else setRole(res.role);
     setLoading(false);
   };
 

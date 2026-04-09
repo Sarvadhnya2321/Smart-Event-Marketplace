@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create a configured Axios instance pointing to your Cloud Run URL
 export const api = axios.create({
-  baseURL: 'https://event-backend-473234681844.us-central1.run.app',
+  baseURL: import.meta.env.VITE_API_BASE_URL, // Fallback to localhost for development
   headers: {
     'Content-Type': 'application/json',
   },
