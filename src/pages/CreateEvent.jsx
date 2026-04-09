@@ -6,7 +6,7 @@ export default function CreateEvent() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // State matches backend parameters exactly
+  // State matches your events.py backend parameters exactly
   const [formData, setFormData] = useState({ 
     organiser_id: '',
     title: '', 
@@ -39,8 +39,12 @@ export default function CreateEvent() {
     }
 
     try {
-      // Axios automatically sets the correct multipart boundary headers when given FormData
-      await api.post('/events/', payload);
+      // Explicitly forcing the header to prevent default JSON overrides
+      await api.post('/events/', payload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       
       alert('Event published successfully!');
       navigate('/events');

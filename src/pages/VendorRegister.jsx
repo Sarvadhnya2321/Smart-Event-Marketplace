@@ -29,7 +29,12 @@ export default function VendorRegister() {
         price_range: formData.price_range
       };
 
-      await api.post('/vendors/register', payload);
+      // Explicitly forcing the header so FastAPI reads the body as JSON
+      await api.post('/vendors/register', payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       alert("Business Registered Successfully!");
       navigate('/vendors'); 
