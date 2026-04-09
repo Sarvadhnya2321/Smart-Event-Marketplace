@@ -25,14 +25,29 @@ export default function CreateEvent() {
       // If successful, redirect to the explore/events page
       navigate('/events');
     } catch (err) {
-      // Log the full error to the console for debugging
       console.error("Event creation error:", err);
       
-      // Extract the specific error message from FastAPI, or fallback to a standard message
-      const errorMessage = err.response?.data?.detail || err.message || "Failed to create event.";
+      let errorMessage = "Failed to create event.";
+      const detail = err.response?.data?.detail;
       
-      // Alert the actual reason it failed
-      alert(`Error: ${errorMessage}`);
+      // Improved error handler to parse FastAPI's 422 array format
+      if (detail) {
+        if (Array.isArray(detail)) {
+          errorMessage = detail.map(errItem => {
+            const field = errItem.loc ? errItem.loc[errItem.loc.length - 1] : 'Field';
+            return `${field}: ${errItem.msg}`;
+          }).join('\n');
+        } else if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else {
+          errorMessage = JSON.stringify(detail);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      // Alert the exact missing fields required by your backend
+      alert(`Error Details:\n${errorMessage}`);
     } finally {
       setLoading(false);
     }
