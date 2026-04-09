@@ -5,12 +5,14 @@ import { api } from '../services/api';
 export default function VendorRegister() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  
+  // State updated to match your exact backend keys
   const [formData, setFormData] = useState({
+    user_id: '',
     business_name: '',
-    category: 'Catering',
-    description: '', // Added missing field
-    price_range: '', // Added missing field
-    user_id: '',     // Added missing field
+    service_category: 'Catering', // Updated to match "service_category"
+    description: '',
+    price_range: '',
   });
 
   const handleSubmit = async (e) => {
@@ -18,15 +20,18 @@ export default function VendorRegister() {
     setLoading(true);
     
     try {
-      // Send ALL required fields to the backend
-      const response = await api.post('/vendors/register', {
-        business_name: formData.business_name,
-        category: formData.category,
-        description: formData.description,
-        price_range: formData.price_range,
-        user_id: parseInt(formData.user_id), // Backend likely expects an integer ID
-        rating: 5.0 
-      });
+      // 1. Create the native FormData object instead of JSON
+      const payload = new FormData();
+      
+      // 2. Append fields exactly as shown in your reference
+      payload.append("user_id", formData.user_id);
+      payload.append("business_name", formData.business_name);
+      payload.append("service_category", formData.service_category);
+      payload.append("description", formData.description);
+      payload.append("price_range", formData.price_range);
+
+      // 3. Send the FormData payload to the backend
+      const response = await api.post('/vendors/register', payload);
 
       console.log("Success:", response.data);
       alert("Business Registered Successfully!");
@@ -67,7 +72,6 @@ export default function VendorRegister() {
         
         <form onSubmit={handleSubmit} className="space-y-6">
           
-          {/* User ID (Temporary input until Auth is connected) */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">User ID</label>
             <input 
@@ -94,8 +98,8 @@ export default function VendorRegister() {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Service Category</label>
             <select 
               className="w-full bg-[#0a0a0a] border border-white/10 text-white p-4 rounded-xl outline-none cursor-pointer appearance-none"
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
+              value={formData.service_category}
+              onChange={(e) => setFormData({...formData, service_category: e.target.value})}
             >
               <option value="Catering">Catering</option>
               <option value="Sound">Sound Systems</option>
@@ -104,7 +108,6 @@ export default function VendorRegister() {
             </select>
           </div>
 
-          {/* Added Description */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Description</label>
             <textarea 
@@ -116,7 +119,6 @@ export default function VendorRegister() {
             />
           </div>
 
-          {/* Added Price Range */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Price Range</label>
             <select 

@@ -5,24 +5,50 @@ import { api } from '../services/api';
 export default function CreateEvent() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', image: null });
+  
+  // State matches your reference fields exactly
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    description: '', 
+    category: 'Music', // Default category
+    location: '',
+    date: '',
+    budget: '',
+    ticketPrice: '', 
+    file: null 
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    // Package the data for FastAPI
-    const data = new FormData();
-    data.append('name', formData.name);
-    data.append('description', formData.description);
-    data.append('price', formData.price);
-    if (formData.image) data.append('image', formData.image);
+    // 1. Create a native FormData object
+    const payload = new FormData();
+    
+    // 2. Append all fields exactly as shown in your reference
+    payload.append("organiser_id", 1); // Assuming 1 for now based on reference
+    payload.append("title", formData.title);
+    payload.append("description", formData.description);
+    payload.append("category", formData.category);
+    payload.append("location", formData.location);
+    payload.append("date", formData.date);
+    payload.append("budget", formData.budget);
+    payload.append("ticket_price", formData.ticketPrice);
+    
+    // 3. Append the file using the exact key "poster"
+    if (formData.file) {
+      payload.append("poster", formData.file); 
+    }
 
     try {
-      await api.post('/events/', data, { 
-        headers: { 'Content-Type': 'multipart/form-data' }
+      // 4. Send the request with explicit multipart/form-data headers
+      await api.post('/events/', payload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
-      // If successful, redirect to the explore/events page
+      
+      alert('Event published successfully!');
       navigate('/events');
     } catch (err) {
       console.error("Event creation error:", err);
@@ -30,7 +56,6 @@ export default function CreateEvent() {
       let errorMessage = "Failed to create event.";
       const detail = err.response?.data?.detail;
       
-      // Improved error handler to parse FastAPI's 422 array format
       if (detail) {
         if (Array.isArray(detail)) {
           errorMessage = detail.map(errItem => {
@@ -46,7 +71,6 @@ export default function CreateEvent() {
         errorMessage = err.message;
       }
 
-      // Alert the exact missing fields required by your backend
       alert(`Error Details:\n${errorMessage}`);
     } finally {
       setLoading(false);
@@ -54,8 +78,7 @@ export default function CreateEvent() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-16 relative">
-      {/* Glow Effect */}
+    <div className="max-w-4xl mx-auto px-4 py-16 relative">
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="bg-[#111111] rounded-3xl border border-white/10 shadow-2xl p-10 relative z-10">
@@ -63,12 +86,48 @@ export default function CreateEvent() {
         <p className="text-gray-400 mb-10 font-medium">Bring your vision to life on EventSphere.</p>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Event Name</label>
-            <input type="text" required 
-              className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600" 
-              placeholder="e.g. Neon Nights Festival"
-              onChange={(e) => setFormData({...formData, name: e.target.value})} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Event Title</label>
+              <input type="text" required 
+                className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600" 
+                placeholder="e.g. Neon Nights Festival"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})} />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Category</label>
+              <select required 
+                className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all cursor-pointer appearance-none" 
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}>
+                <option value="Music">Music & Concerts</option>
+                <option value="Tech">Tech & Innovation</option>
+                <option value="Corporate">Corporate & Business</option>
+                <option value="Arts">Arts & Culture</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Date</label>
+              <input type="date" required 
+                className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600" 
+                value={formData.date}
+                onChange={(e) => setFormData({...formData, date: e.target.value})} />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Location</label>
+              <input type="text" required 
+                className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600" 
+                placeholder="e.g. Central Park"
+                value={formData.location}
+                onChange={(e) => setFormData({...formData, location: e.target.value})} />
+            </div>
           </div>
           
           <div>
@@ -76,23 +135,36 @@ export default function CreateEvent() {
             <textarea required rows="4" 
               className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600 resize-none" 
               placeholder="Tell the attendees what makes this event special..."
+              value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})} />
           </div>
-          
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ticket Price ($)</label>
-            <input type="number" required min="0" 
-              className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600" 
-              placeholder="0.00"
-              onChange={(e) => setFormData({...formData, price: e.target.value})} />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Event Budget ($)</label>
+              <input type="number" required min="0" 
+                className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600" 
+                placeholder="e.g. 5000"
+                value={formData.budget}
+                onChange={(e) => setFormData({...formData, budget: e.target.value})} />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ticket Price ($)</label>
+              <input type="number" required min="0" 
+                className="block w-full bg-[#0a0a0a] border border-white/10 text-white px-5 py-3.5 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition-all placeholder-gray-600" 
+                placeholder="0.00"
+                value={formData.ticketPrice}
+                onChange={(e) => setFormData({...formData, ticketPrice: e.target.value})} />
+            </div>
           </div>
           
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Event Poster</label>
             <div className="block w-full bg-[#0a0a0a] border border-white/10 border-dashed text-gray-400 px-5 py-8 rounded-xl text-center hover:border-brand-500/50 transition-colors">
-              <input type="file" accept="image/*" 
+              <input type="file" accept="image/*" required
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-white file:text-black hover:file:bg-gray-200 file:cursor-pointer cursor-pointer transition-all" 
-                onChange={(e) => setFormData({...formData, image: e.target.files[0]})} />
+                onChange={(e) => setFormData({...formData, file: e.target.files[0]})} />
             </div>
           </div>
           
